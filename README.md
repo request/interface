@@ -1,0 +1,314 @@
+
+# Common Interface for HTTP Clients
+
+A module conforming to this specification is:
+
+1. A function that expects the common options object outlined in this specification
+2. A function that initiates the actual HTTP request while consuming the options outlined in this specification
+
+```js
+module.exports = (options) => {
+  // do something with options
+  // and make the actual HTTP request
+}
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')
+// make request
+request({
+  // any common option defined in this specification
+})
+```
+
+
+## HTTP Client Wrappers
+
+```js
+var http = require('http')
+
+module.exports = (options) => {
+  // do something with the common interface options
+  var resultOptions = {}
+  // implement various HTTP features
+  return http.request(resultOptions)
+}
+```
+
+---
+
+```js
+var request = require('request')
+
+module.exports = (options) => {
+  // do something with the common interface options
+  var resultOptions = {}
+  // implement various HTTP features
+  return request(resultOptions)
+}
+```
+
+---
+
+```js
+// use the native fetch API in the browser
+
+module.exports = (options) => {
+  // do something with the common interface options
+  var resultOptions = {}
+  // implement various HTTP features
+  return fetch(new Request(url, resultOptions))
+}
+```
+
+Either way the client application should be able to make requests in a consistent way:
+
+```js
+var request = require('my-http-client')
+// make request
+request({
+  // any common option defined in this specification
+})
+```
+
+
+## Optional Dependencies
+
+A module conforming to this specification while having optional dependencies may look like this:
+
+```js
+module.exports = (deps) => (options) => {
+  var resultOptions = {}
+  if (options.oauth) {
+    resultOptions.oauth = deps.oauth(options.oauth)
+  }
+  return request(resultOptions)
+}
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')({
+  oauth: require('my-oauth-implementation')
+})
+// make request
+request({
+  // any common option defined in this specification
+})
+```
+
+
+## Bundled Dependencies
+
+A module conforming to this specification while having *hardcoded* dependencies may look like this:
+
+```js
+module.exports = require('my-http-client')({
+  oauth: require('my-oauth-implementation')
+})
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')
+// make request
+request({
+  // any common option defined in this specification
+})
+```
+
+
+# Interface
+
+option    | type
+:---      | :---
+url/uri   | `String`, `Object`
+qs        | `Object`, `String`
+form      | `Object`, `String`
+json      | `Object`, `String`
+body      | `Stream`, `Buffer`, `Array`, `String`
+multipart | `Object`, `Array`
+auth      | `Object`
+gzip      | `Boolean`, `String`
+encoding  | `Boolean`, `String`
+headers   | `Object`
+cookie    | `Boolean`, `Object`
+length    | `Boolean`
+callback  | `Function`
+redirect  | `Boolean`, `Object`
+timeout   | `Number`
+proxy     | `String`, `Object`
+tunnel    | `Boolean`
+parse     | `Object`
+stringify | `Object`
+end       | `Boolean`
+
+
+## URL
+
+#### url/uri
+  - `String`
+  - `url.Url`
+
+#### qs
+  - `Object`
+  - `String`
+
+## Body
+
+#### form
+  - `Object`
+  - `String` pass URL encoded string if you want it to be RFC3986 encoded prior sending
+
+#### json
+  - `Object`
+  - `String`
+
+#### body
+  - `Stream`
+  - `Buffer`
+  - `String`
+  - `Array`
+
+#### multipart
+
+- `Object` for `multipart/form-data`
+- `Array` for any other `multipart/[TYPE]`, defaults to `multipart/related`
+
+Each item's body can be either: `Stream`, `Request`, `Buffer` or `String`.
+
+Additionally you can set `preambleCRLF` and/or `postambleCRLF` to `true`.
+
+
+## Authentication
+
+#### auth
+  - basic
+    - `{user: '', pass: '', sendImmediately: false, digest: true}`
+      - Sets the `Authorization: Basic ...` header.
+      - The `sendImmediately` option default to `true` if omitted.
+      - The `sendImmediately: false` options requires the [redirect option][redirect-option] to be enabled.
+      - Digest authentication requires the [@request/digest][request-digest] module.
+  - bearer
+    - `{token: '', sendImmediately: false}`
+      - Alternatively the `Authorization: Bearer ...` header can be set if using the `bearer` option.
+      - The rules for the `sendImmediately` option from above applies here.
+  - oauth
+  - hawk
+  - httpSignature
+  - aws
+
+
+## Modifiers
+
+#### gzip
+- `gzip: true`
+  - Pipes the response body to [zlib][zlib] Inflate or Gunzip stream based on the compression method specified in the `content-encoding` response header.
+- `gzip: 'gzip'` | `gzip: 'deflate'`
+  - Explicitly specify decompression method to use.
+
+#### encoding
+- `encoding: true`
+  - Pipes the response body to [iconv-lite][iconv-lite] stream, defaults to `utf8`.
+- `encoding: 'ISO-8859-1'` | `encoding: 'win1251'` | ...
+  - Specific encoding to use.
+- `encoding: 'binary'`
+  - Set `encoding` to `'binary'` when expecting binary response.
+
+
+## Misc
+
+#### headers
+  - `Object`
+
+#### cookie
+  - `true`
+  - `new require('tough-cookie).CookieJar(store, options)`
+
+#### length
+  - `true` defaults to `false` if omitted
+
+#### callback
+  buffers the response body
+  - `function(err, res, body)` by default the response buffer is decoded into string using `utf8`. Set the `encoding` property to `binary` if you expect binary data, or any other specific encoding
+
+#### redirect
+  - `true` follow redirects for `GET`, `HEAD`, `OPTIONS` and `TRACE` requests
+  - `Object`
+    - *all* follow all redirects
+    - *max* maximum redirects allowed
+    - *removeReferer* remove the `referer` header on redirect
+    - *allow* `function (res)` user defined function to check if the redirect should be allowed
+
+#### timeout
+  - `Number` integer containing the number of milliseconds to wait for a server to send response headers (and start the response body) before aborting the request. Note that if the underlying TCP connection cannot be established, the OS-wide TCP connection timeout will overrule the timeout option
+
+#### proxy
+  - `String`
+  - `url.Url`
+  - `Object`
+
+```js
+{
+  proxy: 'http://localhost:6767'
+  //
+  proxy: url.parse('http://localhost:6767')
+  //
+  proxy: {
+    url: 'http://localhost:6767',
+    headers: {
+      allow: ['header-name'],
+      exclusive: ['header-name']
+    }
+  }
+}
+```
+
+#### tunnel - requires [tunnel-agent][tunnel-agent]
+  - `true`
+
+#### parse
+  - `{json: true}`
+    - sets the `accept: application/json` header for the request
+    - parses `JSON` or `JSONP` response bodies (only if the server responds with the approprite headers)
+  - `{json: function () {}}`
+    - same as above but additionally passes a user defined reviver function to the `JSON.parse` method
+  - `{qs: {sep:';', eq:':'}}`
+    - `qs.parse` options to use
+  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][node-querystring] module instead
+    - `querystring.parse` options to use
+
+#### stringify
+  - `{qs: {sep:';', eq:':'}}`
+    - `qs.stringify` options to use
+  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][node-querystring] module instead
+    - `querystring.stringify` options to use
+
+#### end
+  - `true` tries to automatically end the request on `nextTick`
+
+
+  [request]: https://github.com/request/request
+  [request-contributors]: https://github.com/request/request/graphs/contributors
+  [zlib]: https://iojs.org/api/zlib.html
+  [node-http-request]: https://nodejs.org/api/http.html#http_http_request_options_callback
+
+  [tough-cookie]: https://github.com/SalesforceEng/tough-cookie
+  [iconv-lite]: https://www.npmjs.com/package/iconv-lite
+  [hawk]: https://github.com/hueniverse/hawk
+  [aws-sign2]: https://github.com/request/aws-sign
+  [http-signature]: https://github.com/joyent/node-http-signature
+  [tunnel-agent]: https://github.com/mikeal/tunnel-agent
+
+  [request-core]: https://github.com/request/core
+  [request-headers]: https://github.com/request/headers
+  [request-digest]: https://github.com/request/digest
+  [request-oauth]: https://github.com/request/oauth
+  [request-multipart]: https://github.com/request/multipart
+  [request-log]: https://github.com/request/log
+
+  [redirect-option]: #redirect
