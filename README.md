@@ -122,6 +122,129 @@ request({
 ```
 
 
+## Basic API
+
+A module using the common [@request/api][request-api] may look like this:
+
+```js
+var request = require('my-http-client')
+var api = require('@request/api')
+
+module.exports = api({
+  type: 'basic',
+  request: request
+})
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')
+// make request
+request('url', {options}, (err, res, body) => {})
+// or
+request.[HTTP_VERB]('url', {options}, (err, res, bdoy) => {})
+// + any combination of the above arguments
+```
+
+
+## Chain API
+
+A module using the common [@request/api][request-api] may look like this:
+
+```js
+var request = require('my-http-client')
+var api = require('@request/api')
+
+module.exports = api({
+  type: 'chain',
+  config: {
+    method: {
+      get: [],
+      // ...
+    },
+    option: {
+      qs: [],
+      // ...
+    },
+    custom: {
+      submit: [],
+      // ...
+    }
+  },
+  define: {
+    submit: function (callback) {
+      if (callback) {
+        this._options.callback = callback
+      }
+      return request(this._options)
+    }
+  }
+})
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')
+// make request
+request
+  .get('url')
+  .qs({a: 1})
+  .submit((err, res, body) => {})
+```
+
+
+## Promises
+
+A module utilizing Promises may look like this:
+
+```js
+module.exports = (deps) => (options) => {
+  var request = deps.request
+  
+  if (deps.promise) {
+    var Promise = deps.promise
+    var promise = new Promise((resolve, reject) => {
+      options.callback = (err, res, body) => {
+        if (err) {
+          reject(err)
+        }
+        else {
+          resolve([res, body])
+        }
+      }
+    })
+    request(options)
+    return promise
+  }
+  else {
+    return request(options)
+  }
+}
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')({
+  request: require('request'),
+  promise: Promise
+})
+// or
+var request = require('my-http-client')({
+  request: require('request'),
+  promise: require('bluebird')
+})
+// make request
+request({options})
+  .catch((err) => {})
+  .then((result) => {})
+```
+
+Promises can be combined with the [@request/api][request-api].
+
+
 # Interface
 
 option    | type
@@ -298,6 +421,7 @@ Additionally you can set `preambleCRLF` and/or `postambleCRLF` to `true`.
   - `true` tries to automatically end the request on `nextTick`
 
 
+  [request-api]: https://github.com/request/api
   [request]: https://github.com/request/request
   [request-contributors]: https://github.com/request/request/graphs/contributors
   [zlib]: https://iojs.org/api/zlib.html
