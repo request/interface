@@ -126,6 +126,7 @@ request({
 
 option    | type
 :---      | :---
+method    | `String`
 url/uri   | `String`, `Object`
 qs        | `Object`, `String`
 form      | `Object`, `String`
@@ -147,6 +148,11 @@ parse     | `Object`
 stringify | `Object`
 end       | `Boolean`
 
+
+## Method
+
+#### method
+  - `String`
 
 ## URL
 
