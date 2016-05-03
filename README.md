@@ -202,7 +202,7 @@ A module utilizing Promises may look like this:
 ```js
 module.exports = (deps) => (options) => {
   var request = deps.request
-  
+
   if (deps.promise) {
     var Promise = deps.promise
     var promise = new Promise((resolve, reject) => {
@@ -250,136 +250,159 @@ Promises can be combined with the [@request/api][request-api].
 option    | type
 :---      | :---
 method    | `String`
+**URL**   |
 url/uri   | `String`, `Object`
 qs        | `Object`, `String`
+**Body**  |
 form      | `Object`, `String`
 json      | `Object`, `String`
 body      | `Stream`, `Buffer`, `Array`, `String`
 multipart | `Object`, `Array`
+**Authentication** |
 auth      | `Object`
+ | basic, oauth, hawk, httpSignature, aws
+**Modifiers** |
 gzip      | `Boolean`, `String`
 encoding  | `Boolean`, `String`
+stringify | `Object`
+parse     | `Object`
+**Proxy** |
+proxy     | `String`, `Object`
+tunnel    | `Boolean`
+**Misc**  |
 headers   | `Object`
 cookie    | `Boolean`, `Object`
 length    | `Boolean`
 callback  | `Function`
 redirect  | `Boolean`, `Object`
 timeout   | `Number`
-proxy     | `String`, `Object`
-tunnel    | `Boolean`
-parse     | `Object`
-stringify | `Object`
+har       | `Object`
 end       | `Boolean`
+
+
+---
 
 
 ## Method
 
-#### method
-  - `String`
+### method `String`
+
+
+---
+
 
 ## URL
 
-#### url/uri
+### url/uri `String` | `Object`
   - `String`
   - `url.Url`
 
-#### qs
+### qs `Object` | `String`
   - `Object`
   - `String`
+
+
+---
+
 
 ## Body
 
-#### form
+### form `Object` | `String`
   - `Object`
   - `String` pass URL encoded string if you want it to be RFC3986 encoded prior sending
 
-#### json
+### json `Object` | `String`
   - `Object`
   - `String`
 
-#### body
+### body `String` | `Buffer` | `Array` | `Stream`
   - `Stream`
   - `Buffer`
   - `String`
   - `Array`
 
-#### multipart
+### multipart `Object` | `Array`
 
 - `Object` for `multipart/form-data`
 - `Array` for any other `multipart/[TYPE]`, defaults to `multipart/related`
 
 Each item's body can be either: `Stream`, `Request`, `Buffer` or `String`.
 
+- `_multipart`
+  - `data` - the above
 Additionally you can set `preambleCRLF` and/or `postambleCRLF` to `true`.
+
+
+---
 
 
 ## Authentication
 
-#### auth
-  - basic
+### auth `Object`
+  - `basic`
     - `{user: '', pass: '', sendImmediately: false, digest: true}`
       - Sets the `Authorization: Basic ...` header.
       - The `sendImmediately` option default to `true` if omitted.
       - The `sendImmediately: false` options requires the [redirect option][redirect-option] to be enabled.
       - Digest authentication requires the [@request/digest][request-digest] module.
-  - bearer
+
+  - `bearer`
     - `{token: '', sendImmediately: false}`
       - Alternatively the `Authorization: Bearer ...` header can be set if using the `bearer` option.
       - The rules for the `sendImmediately` option from above applies here.
-  - oauth
-  - hawk
-  - httpSignature
-  - aws
+
+  - `oauth`
+
+  - `hawk`
+
+  - `httpSignature`
+
+  - `aws`
+
+
+---
 
 
 ## Modifiers
 
-#### gzip
-- `gzip: true`
+### gzip `Boolean` | `String`
+- `true`
   - Pipes the response body to [zlib][zlib] Inflate or Gunzip stream based on the compression method specified in the `content-encoding` response header.
-- `gzip: 'gzip'` | `gzip: 'deflate'`
+- `'gzip'` | `'deflate'`
   - Explicitly specify decompression method to use.
 
-#### encoding
-- `encoding: true`
+### encoding `Boolean` | `String`
+- `true`
   - Pipes the response body to [iconv-lite][iconv-lite] stream, defaults to `utf8`.
-- `encoding: 'ISO-8859-1'` | `encoding: 'win1251'` | ...
+- `'ISO-8859-1'` | `'win1251'` | ...
   - Specific encoding to use.
-- `encoding: 'binary'`
+- `'binary'`
   - Set `encoding` to `'binary'` when expecting binary response.
 
+### parse `Object`
+  - `{json: true}`
+    - sets the `accept: application/json` header for the request
+    - parses `JSON` or `JSONP` response bodies *(only if the server responds with the approprite headers)*
+  - `{json: function () {}}`
+    - same as above but additionally passes a user defined reviver function to the `JSON.parse` method
+  - `{qs: {sep:';', eq:':'}}`
+    - [qs.parse()][qs] options to use
+  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][querystring] module instead
+    - [querystring.parse()][querystring] options to use
 
-## Misc
+### stringify `Object`
+  - `{qs: {sep:';', eq:':'}}`
+    - [qs.stringify()][qs] options to use
+  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][querystring] module instead
+    - [querystring.stringify()][querystring] options to use
 
-#### headers
-  - `Object`
 
-#### cookie
-  - `true`
-  - `new require('tough-cookie).CookieJar(store, options)`
+---
 
-#### length
-  - `true` defaults to `false` if omitted
 
-#### callback
-  buffers the response body
-  - `function(err, res, body)` by default the response buffer is decoded into string using `utf8`. Set the `encoding` property to `binary` if you expect binary data, or any other specific encoding
+## Proxy
 
-#### redirect
-  - `true` follow redirects for `GET`, `HEAD`, `OPTIONS` and `TRACE` requests
-  - `Object`
-    - *all* follow all redirects
-    - *max* maximum redirects allowed
-    - *removeReferer* remove the `referer` header on redirect
-    - *allow* `function (res)` user defined function to check if the redirect should be allowed
-
-#### timeout
-  - `Number` integer containing the number of milliseconds to wait for a server to send response headers (and start the response body) before aborting the request. Note that if the underlying TCP connection cannot be established, the OS-wide TCP connection timeout will overrule the timeout option
-
-#### proxy
-  - `String`
-  - `url.Url`
-  - `Object`
+### proxy `String` | `Object`
 
 ```js
 {
@@ -397,31 +420,64 @@ Additionally you can set `preambleCRLF` and/or `postambleCRLF` to `true`.
 }
 ```
 
-#### tunnel - requires [tunnel-agent][tunnel-agent]
+### tunnel `Boolean`
   - `true`
 
-#### parse
-  - `{json: true}`
-    - sets the `accept: application/json` header for the request
-    - parses `JSON` or `JSONP` response bodies (only if the server responds with the approprite headers)
-  - `{json: function () {}}`
-    - same as above but additionally passes a user defined reviver function to the `JSON.parse` method
-  - `{qs: {sep:';', eq:':'}}`
-    - `qs.parse` options to use
-  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][node-querystring] module instead
-    - `querystring.parse` options to use
 
-#### stringify
-  - `{qs: {sep:';', eq:':'}}`
-    - `qs.stringify` options to use
-  - `{querystring: {sep:';', eq:':', options: {}}}` use the [querystring][node-querystring] module instead
-    - `querystring.stringify` options to use
+---
 
-#### end
-  - `true` tries to automatically end the request on `nextTick`
+
+## Misc
+
+### headers `Object`
+
+
+### cookie `Boolean` | `Object`
+  - `true`
+  - `new require('tough-cookie).CookieJar(store, options)`
+
+
+### length `Boolean`
+  - `true` defaults to `false` if omitted
+
+
+### callback `Function`
+  - `function (err, res, body) {}` buffers the response body
+    - by default the response buffer is decoded into string using `utf8`.
+    Set the `encoding` property to `binary` if you expect binary data, or any other specific encoding.
+
+
+### redirect `Boolean` | `Object`
+  - `true`
+    - follow redirects for `GET`, `HEAD`, `OPTIONS` and `TRACE` requests
+  - `Object`
+    - *all* - follow all redirects
+    - *max* - maximum redirects allowed
+    - *removeReferer* - remove the `referer` header on redirect
+    - *allow* - `function (res)` user defined function to check if the redirect should be allowed
+
+
+### timeout `Number`
+  - integer indicating the number of milliseconds to wait for a server to send response headers (and start the response body) before aborting the request. Note that if the underlying TCP connection cannot be established, the OS-wide TCP connection timeout will overrule the timeout option
+
+
+### har `Object`
+
+
+### end `Boolean`
+  - `true`
+    - tries to automatically end the request on `nextTick`
+
+
+---
 
 
   [request-api]: https://github.com/request/api
+  [qs]: https://www.npmjs.com/package/qs
+  [querystring]: https://nodejs.org/dist/latest-v6.x/docs/api/querystring.html
+
+
+
   [request]: https://github.com/request/request
   [request-contributors]: https://github.com/request/request/graphs/contributors
   [zlib]: https://iojs.org/api/zlib.html
