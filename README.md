@@ -158,27 +158,8 @@ var api = require('@request/api')
 
 module.exports = api({
   type: 'chain',
-  config: {
-    method: {
-      get: [],
-      // ...
-    },
-    option: {
-      qs: [],
-      // ...
-    },
-    custom: {
-      submit: [],
-      // ...
-    }
-  },
   define: {
-    submit: function (callback) {
-      if (callback) {
-        this._options.callback = callback
-      }
-      return request(this._options)
-    }
+    request: request
   }
 })
 ```
@@ -191,7 +172,8 @@ var request = require('my-http-client')
 request
   .get('url')
   .qs({a: 1})
-  .submit((err, res, body) => {})
+  .callback((err, res, body) => {})
+  .request()
 ```
 
 
@@ -202,25 +184,16 @@ A module utilizing Promises may look like this:
 ```js
 module.exports = (deps) => (options) => {
   var request = deps.request
+  var Promise = deps.promise
 
-  if (deps.promise) {
-    var Promise = deps.promise
-    var promise = new Promise((resolve, reject) => {
-      options.callback = (err, res, body) => {
-        if (err) {
-          reject(err)
-        }
-        else {
-          resolve([res, body])
-        }
-      }
-    })
-    request(options)
-    return promise
-  }
-  else {
-    return request(options)
-  }
+  var promise = new Promise((resolve, reject) => {
+    options.callback = (err, res, body) => {
+      ;(err) ? reject(err) : resolve([res, body])
+    }
+  })
+
+  request(options)
+  return promise
 }
 ```
 
@@ -242,7 +215,56 @@ request({options})
   .then((result) => {})
 ```
 
-Promises can be combined with the [@request/api][request-api].
+
+## Basic and Chain APIs + Promises
+
+A module utilizing the common [@request/api][request-api] and Promises may look like this:
+
+```js
+var api = require('@request/api')
+
+module.exports = (deps) => api({
+  type: 'basic', // or 'chain'
+  define: {
+    request: (options) => {
+      var request = deps.request
+      var Promise = deps.promise
+
+      var promise = new Promise((resolve, reject) => {
+        options.callback = (err, res, body) => {
+          ;(err) ? reject(err) : resolve([res, body])
+        }
+      })
+
+      request(options)
+      return promise
+    }
+  }
+})
+```
+
+Given the above module definition, a client application can use it like this:
+
+```js
+var request = require('my-http-client')({
+  request: require('request'),
+  promise: Promise
+})
+// GET http://localhost:6767?a=1
+request.get('http://localhost:6767', {qs: 1})
+  .catch((err) => {})
+  .then((result) => {})
+// or
+request
+  .get('http://localhost:6767')
+  .qs({a: 1})
+  .request()
+  .catch((err) => ())
+  .then((result) => ())
+```
+
+
+---
 
 
 # Interface
