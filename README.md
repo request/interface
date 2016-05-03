@@ -10,7 +10,7 @@
 - [Basic API](#basic-api)
 - [Chain API](#chain-api)
 - [Promises](#promises)
-- [Basic and Chain APIs + Promises](#basic-and-chain-apis_promises)
+- [Basic and Chain APIs + Promises](#basic-and-chain-apis--promises)
 - [Interface](#interface)
 
 
