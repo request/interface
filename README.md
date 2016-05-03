@@ -1,6 +1,21 @@
 
 # Common Interface for HTTP Clients
 
+## Table of Contents
+
+- [Basic Module](#basic-module)
+- [HTTP Client Wrappers](#http-client-wrappers)
+- [Optional Dependencies](#optional-dependencies)
+- [Bundled Dependencies](#bundled-dependencies)
+- [Basic API](#basic-api)
+- [Chain API](#chain-api)
+- [Promises](#promises)
+- [Basic and Chain APIs + Promises](#basic-and-chain-apis_promises)
+- [Interface](#interface)
+
+
+## Basic Module
+
 A module conforming to this specification is:
 
 1. A function that expects the common options object outlined in this specification
@@ -37,8 +52,6 @@ module.exports = (options) => {
 }
 ```
 
----
-
 ```js
 var request = require('request')
 
@@ -49,8 +62,6 @@ module.exports = (options) => {
   return request(resultOptions)
 }
 ```
-
----
 
 ```js
 // use the native fetch API in the browser
